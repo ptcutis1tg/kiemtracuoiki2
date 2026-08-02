@@ -20,7 +20,7 @@ class _GreetingScreenState extends State<GreetingScreen> {
     final session = _sessionService.createNewSession(
       customPrompt != null && customPrompt.length > 25
           ? '${customPrompt.substring(0, 25)}...'
-          : customPrompt ?? 'Tr├▓ chuyß╗çn h╞░ß╗¢ng nghiß╗çp mß╗¢i',
+          : customPrompt ?? 'Trò chuyện hướng nghiệp mới',
     );
     Navigator.push(
       context,
@@ -60,7 +60,7 @@ class _GreetingScreenState extends State<GreetingScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Ch├áo bß║ín ≡ƒæï',
+                            'Chào bạn 👋',
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: 24,
@@ -69,7 +69,7 @@ class _GreetingScreenState extends State<GreetingScreen> {
                           ),
                           SizedBox(height: 4),
                           Text(
-                            'AI H╞░ß╗¢ng nghiß╗çp c├│ thß╗â gi├║p g├¼ cho bß║ín?',
+                            'AI Hướng nghiệp có thể giúp gì cho bạn?',
                             style: TextStyle(color: Colors.white54, fontSize: 13),
                           ),
                         ],
@@ -117,7 +117,7 @@ class _GreetingScreenState extends State<GreetingScreen> {
                                 child: Icon(Icons.auto_awesome, color: Colors.white, size: 24),
                               ),
                               const Text(
-                                'T╞░ vß║Ñn chß╗ìn ng├ánh & khß╗æi thi',
+                                'Tư vấn chọn ngành & khối thi',
                                 style: TextStyle(
                                   color: Colors.white,
                                   fontSize: 14,
@@ -148,16 +148,16 @@ class _GreetingScreenState extends State<GreetingScreen> {
                           children: [
                             // Start new chat card
                             _buildSmallActionCard(
-                              title: 'Bß║»t ─æß║ºu chat mß╗¢i',
+                              title: 'Bắt đầu chat mới',
                               icon: Icons.chat_bubble_outline_rounded,
                               onTap: () => _navigateToChat(),
                             ),
                             const SizedBox(height: 12),
                             // Search by topic card
                             _buildSmallActionCard(
-                              title: 'Gß╗úi ├╜ ng├ánh HOT 2026',
+                              title: 'Gợi ý ngành HOT 2026',
                               icon: Icons.explore_outlined,
-                              onTap: () => _navigateToChat('Gß╗úi ├╜ cho m├¼nh c├íc ng├ánh hß╗ìc HOT nhß║Ñt n─âm 2026 k├¿m khß╗æi thi'),
+                              onTap: () => _navigateToChat('Gợi ý cho mình các ngành học HOT nhất năm 2026 kèm khối thi'),
                             ),
                           ],
                         ),
@@ -169,7 +169,7 @@ class _GreetingScreenState extends State<GreetingScreen> {
 
                   // Recent Searches Title
                   const Text(
-                    'C├íc cuß╗Öc tr├▓ chuyß╗çn gß║ºn ─æ├óy',
+                    'Các cuộc trò chuyện gần đây',
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 16,
@@ -184,7 +184,7 @@ class _GreetingScreenState extends State<GreetingScreen> {
                     const Padding(
                       padding: EdgeInsets.symmetric(vertical: 24),
                       child: Text(
-                        'Ch╞░a c├│ cuß╗Öc tr├▓ chuyß╗çn n├áo. H├úy nhß║Ñn n├║t + b├¬n d╞░ß╗¢i ─æß╗â bß║»t ─æß║ºu!',
+                        'Chưa có cuộc trò chuyện nào. Hãy nhấn nút + bên dưới để bắt đầu!',
                         style: TextStyle(color: Colors.white38, fontSize: 13),
                       ),
                     )
