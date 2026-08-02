@@ -4,11 +4,12 @@ import 'package:http/http.dart' as http;
 class GeminiService {
   static const String _apiKey = String.fromEnvironment('GEMINI_API_KEY');
 
-  // Priority list of Gemini models for maximum availability & performance
+  // Priority list of Gemini models for maximum quota availability
   static const List<String> _models = [
     'gemini-1.5-flash',
     'gemini-1.5-flash-8b',
-    'gemini-1.5-flash-latest',
+    'gemini-2.0-flash-lite',
+    'gemini-1.5-pro',
     'gemini-2.0-flash',
   ];
 
@@ -53,55 +54,50 @@ class GeminiService {
 
     String lastErrorMessage = 'Không thể gọi API';
 
+    // Try candidate models sequentially. If one model returns 404 or 429 (Quota limit: 0), try next model immediately.
     for (final model in _models) {
       final url = Uri.parse(
           'https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent?key=$_apiKey');
 
-      // Retry loop for rate limits (up to 3 retries with delay)
-      for (int attempt = 0; attempt < 3; attempt++) {
-        try {
-          final response = await http.post(
-            url,
-            headers: {'Content-Type': 'application/json'},
-            body: jsonEncode(payload),
-          );
+      try {
+        final response = await http.post(
+          url,
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode(payload),
+        );
 
-          if (response.statusCode == 200) {
-            final data = jsonDecode(response.body);
-            final String botResponse =
-                data['candidates']?[0]?['content']?['parts']?[0]?['text'] ??
-                    'Không nhận được phản hồi từ AI.';
+        if (response.statusCode == 200) {
+          final data = jsonDecode(response.body);
+          final String botResponse =
+              data['candidates']?[0]?['content']?['parts']?[0]?['text'] ??
+                  'Không nhận được phản hồi từ AI.';
 
-            _history.add({
-              'role': 'model',
-              'parts': [
-                {'text': botResponse}
-              ]
-            });
+          _history.add({
+            'role': 'model',
+            'parts': [
+              {'text': botResponse}
+            ]
+          });
 
-            return botResponse;
-          } else if (response.statusCode == 404) {
-            // Model 404 Not Found -> try next model in candidate list
-            break;
-          } else if (response.statusCode == 429) {
-            // Rate Limit -> Wait 2.5 seconds and retry attempt
-            lastErrorMessage = '429 Rate Limit Exceeded';
-            await Future.delayed(const Duration(milliseconds: 2500));
+          return botResponse;
+        } else {
+          final errorJson = jsonDecode(response.body);
+          final String rawErr = errorJson['error']?['message'] ?? '';
+          lastErrorMessage = rawErr.isNotEmpty ? rawErr : 'Lỗi kết nối API (${response.statusCode})';
+
+          // If error is 404 (Model not found) or 429 (Quota exceeded/limit: 0 on this model), try next candidate model in list
+          if (response.statusCode == 404 || response.statusCode == 429 || rawErr.contains('limit: 0')) {
             continue;
           } else {
-            final errorJson = jsonDecode(response.body);
-            lastErrorMessage =
-                errorJson['error']?['message'] ?? 'Lỗi kết nối API (${response.statusCode})';
             break;
           }
-        } catch (e) {
-          lastErrorMessage = 'Lỗi kết nối mạng: $e';
-          break;
         }
+      } catch (e) {
+        lastErrorMessage = 'Lỗi kết nối mạng: $e';
       }
     }
 
-    // Rollback last user message if request failed
+    // Rollback last user message if all models failed
     if (_history.isNotEmpty && _history.last['role'] == 'user') {
       _history.removeLast();
     }
