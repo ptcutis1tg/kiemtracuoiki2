@@ -1,15 +1,50 @@
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/chat_message.dart';
 import '../models/chat_session.dart';
 
 class SessionService {
   static final SessionService _instance = SessionService._internal();
   factory SessionService() => _instance;
-  SessionService._internal() {
-    _initDefaultSessions();
-  }
+  SessionService._internal();
 
   final List<ChatSession> _sessions = [];
+  SharedPreferences? _prefs;
+  static const String _storageKey = 'career_chat_sessions_v1';
+
+  Future<void> init() async {
+    _prefs = await SharedPreferences.getInstance();
+    _loadSessions();
+  }
+
+  void _loadSessions() {
+    if (_prefs == null) return;
+    
+    final String? sessionsJson = _prefs!.getString(_storageKey);
+    if (sessionsJson != null && sessionsJson.isNotEmpty) {
+      try {
+        final List<dynamic> decodedList = jsonDecode(sessionsJson);
+        _sessions.clear();
+        _sessions.addAll(
+          decodedList.map((json) => ChatSession.fromJson(json as Map<String, dynamic>)),
+        );
+      } catch (e) {
+        debugPrint('Lỗi tải dữ liệu Local Storage: $e');
+      }
+    }
+  }
+
+  Future<void> saveSessions() async {
+    if (_prefs == null) return;
+    try {
+      final List<Map<String, dynamic>> jsonList = _sessions.map((s) => s.toJson()).toList();
+      final String jsonString = jsonEncode(jsonList);
+      await _prefs!.setString(_storageKey, jsonString);
+    } catch (e) {
+      debugPrint('Lỗi lưu dữ liệu Local Storage: $e');
+    }
+  }
 
   List<ChatSession> get recentSessions {
     final sorted = List<ChatSession>.from(_sessions);
@@ -42,56 +77,7 @@ class SessionService {
       ],
     );
     _sessions.insert(0, newSession);
+    saveSessions(); // Lưu ngay khi tạo mới
     return newSession;
-  }
-
-  void _initDefaultSessions() {
-    _sessions.addAll([
-      ChatSession(
-        id: 's1',
-        title: 'Nên chọn ngành CNTT hay Kinh tế?',
-        lastUpdated: DateTime.now().subtract(const Duration(hours: 1)),
-        messages: [
-          ChatMessage(
-            id: 'm1',
-            text: 'Nên chọn ngành CNTT hay Kinh tế?',
-            sender: MessageSender.user,
-            timestamp: DateTime.now().subtract(const Duration(hours: 1)),
-          ),
-          ChatMessage(
-            id: 'm2',
-            text: 'Cả hai ngành đều rất có triển vọng! Với CNTT, bạn cần tư duy logic tốt. Với Kinh tế, kỹ năng giao tiếp và phân tích dữ liệu thị trường là lợi thế.',
-            sender: MessageSender.bot,
-            timestamp: DateTime.now().subtract(const Duration(minutes: 55)),
-          ),
-        ],
-      ),
-      ChatSession(
-        id: 's2',
-        title: 'Học sinh giỏi Toán & Lý chọn khối nào?',
-        lastUpdated: DateTime.now().subtract(const Duration(hours: 3)),
-        messages: [
-          ChatMessage(
-            id: 'm3',
-            text: 'Học sinh giỏi Toán & Lý chọn khối nào?',
-            sender: MessageSender.user,
-            timestamp: DateTime.now().subtract(const Duration(hours: 3)),
-          ),
-        ],
-      ),
-      ChatSession(
-        id: 's3',
-        title: 'Tư vấn ngành Thiết kế Đồ họa',
-        lastUpdated: DateTime.now().subtract(const Duration(days: 1)),
-        messages: [
-          ChatMessage(
-            id: 'm4',
-            text: 'Tư vấn ngành Thiết kế Đồ họa',
-            sender: MessageSender.user,
-            timestamp: DateTime.now().subtract(const Duration(days: 1)),
-          ),
-        ],
-      ),
-    ]);
   }
 }

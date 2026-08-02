@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/chat_message.dart';
 import '../models/chat_session.dart';
 import '../services/gemini_service.dart';
+import '../services/session_service.dart';
 import '../widgets/chat_bubble.dart';
 import '../widgets/input_bar.dart';
 import '../widgets/quick_chips.dart';
@@ -79,6 +80,7 @@ class _ChatScreenState extends State<ChatScreen> {
       ));
       _isLoading = true;
     });
+    SessionService().saveSessions(); // Lưu lại ngay khi người dùng gửi tin
     _scrollToBottom();
 
     final botResponse = await _geminiService.sendMessage(text);
@@ -93,6 +95,7 @@ class _ChatScreenState extends State<ChatScreen> {
       ));
       _isLoading = false;
     });
+    SessionService().saveSessions(); // Lưu lại sau khi AI phản hồi
     _scrollToBottom();
   }
 
