@@ -224,17 +224,19 @@ class _GreetingScreenState extends State<GreetingScreen> {
     required IconData icon,
     required VoidCallback onTap,
   }) {
-    return InkWell(
-      onTap: onTap,
+    return Material(
+      color: const Color(0xFF1B192A),
       borderRadius: BorderRadius.circular(16),
-      child: Container(
-        height: 84,
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: const Color(0xFF1B192A),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
-        ),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Container(
+          height: 84,
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+            borderRadius: BorderRadius.circular(16),
+          ),
         child: Row(
           children: [
             Icon(icon, color: Colors.white70, size: 20),
@@ -249,25 +251,28 @@ class _GreetingScreenState extends State<GreetingScreen> {
           ],
         ),
       ),
+      ),
     );
   }
 
   Widget _buildRecentChatTile(ChatSession session) {
-    return InkWell(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => ChatScreen(session: session)),
-        ).then((_) => setState(() {}));
-      },
+    return Material(
+      color: const Color(0xFF1B192A),
       borderRadius: BorderRadius.circular(14),
-      child: Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: const Color(0xFF1B192A),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
-        ),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => ChatScreen(session: session)),
+          ).then((_) => setState(() {}));
+        },
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+            borderRadius: BorderRadius.circular(14),
+          ),
         child: Row(
           children: [
             Container(
@@ -295,6 +300,7 @@ class _GreetingScreenState extends State<GreetingScreen> {
             const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white24, size: 12),
           ],
         ),
+      ),
       ),
     );
   }
