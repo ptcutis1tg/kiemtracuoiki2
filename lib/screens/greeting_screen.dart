@@ -1,0 +1,301 @@
+import 'package:flutter/material.dart';
+import '../models/chat_session.dart';
+import '../services/session_service.dart';
+import '../widgets/bottom_nav_dock.dart';
+import 'chat_screen.dart';
+import 'home_screen.dart';
+
+class GreetingScreen extends StatefulWidget {
+  const GreetingScreen({super.key});
+
+  @override
+  State<GreetingScreen> createState() => _GreetingScreenState();
+}
+
+class _GreetingScreenState extends State<GreetingScreen> {
+  final SessionService _sessionService = SessionService();
+
+  void _navigateToChat([String? customPrompt]) {
+    final session = _sessionService.createNewSession(
+      customPrompt != null && customPrompt.length > 25
+          ? '${customPrompt.substring(0, 25)}...'
+          : customPrompt ?? 'Tr├▓ chuyß╗çn h╞░ß╗¢ng nghiß╗çp mß╗¢i',
+    );
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ChatScreen(session: session),
+      ),
+    ).then((_) => setState(() {}));
+  }
+
+  void _navigateToRecentChat() {
+    final session = _sessionService.currentOrLatestSession;
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => ChatScreen(session: session)),
+    ).then((_) => setState(() {}));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final recentSessions = _sessionService.recentSessions;
+
+    return Scaffold(
+      backgroundColor: const Color(0xFF0D0C1D),
+      body: SafeArea(
+        child: Stack(
+          children: [
+            SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Header Greeting
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Ch├áo bß║ín ≡ƒæï',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          SizedBox(height: 4),
+                          Text(
+                            'AI H╞░ß╗¢ng nghiß╗çp c├│ thß╗â gi├║p g├¼ cho bß║ín?',
+                            style: TextStyle(color: Colors.white54, fontSize: 13),
+                          ),
+                        ],
+                      ),
+                      CircleAvatar(
+                        radius: 20,
+                        backgroundColor: Colors.blueAccent.withValues(alpha: 0.2),
+                        child: const Icon(Icons.person, color: Colors.blueAccent),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  // Action Cards Section
+                  Row(
+                    children: [
+                      // Glowing Blue AI Card (Left)
+                      Expanded(
+                        child: Container(
+                          height: 180,
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFF2A1B54), Color(0xFF18153A)],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: Colors.purpleAccent.withValues(alpha: 0.3)),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const CircleAvatar(
+                                radius: 24,
+                                backgroundColor: Color(0xFF6C5CE7),
+                                child: Icon(Icons.auto_awesome, color: Colors.white, size: 24),
+                              ),
+                              const Text(
+                                'T╞░ vß║Ñn chß╗ìn ng├ánh & khß╗æi thi',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.white,
+                                  foregroundColor: Colors.black,
+                                  minimumSize: const Size(double.infinity, 36),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(18),
+                                  ),
+                                ),
+                                onPressed: () => _navigateToChat(),
+                                child: const Text("Let's Talk", style: TextStyle(fontWeight: FontWeight.bold)),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+
+                      // Right Column Cards
+                      Expanded(
+                        child: Column(
+                          children: [
+                            // Start new chat card
+                            _buildSmallActionCard(
+                              title: 'Bß║»t ─æß║ºu chat mß╗¢i',
+                              icon: Icons.chat_bubble_outline_rounded,
+                              onTap: () => _navigateToChat(),
+                            ),
+                            const SizedBox(height: 12),
+                            // Search by topic card
+                            _buildSmallActionCard(
+                              title: 'Gß╗úi ├╜ ng├ánh HOT 2026',
+                              icon: Icons.explore_outlined,
+                              onTap: () => _navigateToChat('Gß╗úi ├╜ cho m├¼nh c├íc ng├ánh hß╗ìc HOT nhß║Ñt n─âm 2026 k├¿m khß╗æi thi'),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 32),
+
+                  // Recent Searches Title
+                  const Text(
+                    'C├íc cuß╗Öc tr├▓ chuyß╗çn gß║ºn ─æ├óy',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // 5 Recent Chat Items
+                  if (recentSessions.isEmpty)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 24),
+                      child: Text(
+                        'Ch╞░a c├│ cuß╗Öc tr├▓ chuyß╗çn n├áo. H├úy nhß║Ñn n├║t + b├¬n d╞░ß╗¢i ─æß╗â bß║»t ─æß║ºu!',
+                        style: TextStyle(color: Colors.white38, fontSize: 13),
+                      ),
+                    )
+                  else
+                    ListView.separated(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: recentSessions.length,
+                      separatorBuilder: (context, index) => const SizedBox(height: 10),
+                      itemBuilder: (context, index) {
+                        final s = recentSessions[index];
+                        return _buildRecentChatTile(s);
+                      },
+                    ),
+                ],
+              ),
+            ),
+
+            // Floating Bottom Navigation Dock
+            Align(
+              alignment: Alignment.bottomCenter,
+              child: BottomNavDock(
+                activeIndex: 1, // Let's use 1 for Greeting Screen
+                onHomeTap: () {
+                  Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(builder: (_) => const HomeScreen()),
+                    (route) => false,
+                  );
+                },
+                onNewChatTap: () => _navigateToChat(),
+                onRecentChatTap: () => _navigateToRecentChat(),
+                onExitTap: () {}, // Already on Greeting Screen
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSmallActionCard({
+    required String title,
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        height: 84,
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: const Color(0xFF1B192A),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: Colors.white70, size: 20),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                title,
+                style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w500),
+              ),
+            ),
+            const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white38, size: 14),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRecentChatTile(ChatSession session) {
+    return InkWell(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => ChatScreen(session: session)),
+        ).then((_) => setState(() {}));
+      },
+      borderRadius: BorderRadius.circular(14),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: const Color(0xFF1B192A),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.08),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.forum_outlined, color: Colors.cyanAccent, size: 18),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                session.title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500),
+              ),
+            ),
+            Text(
+              session.formattedTime,
+              style: const TextStyle(color: Colors.white38, fontSize: 11),
+            ),
+            const SizedBox(width: 8),
+            const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white24, size: 12),
+          ],
+        ),
+      ),
+    );
+  }
+}
