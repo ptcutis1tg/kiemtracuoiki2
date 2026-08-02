@@ -23,12 +23,15 @@ void main() {
       // ignore: avoid_print
       print('=================================================================\n');
 
-      if (response.startsWith('⚠️')) {
+      if (response.startsWith('⚠️ API Key Gemini chưa được cấu hình')) {
         // ignore: avoid_print
-        print('ℹ️ Nhận được thông báo giới hạn/cấu hình từ API: $response');
-        expect(response, isNotEmpty);
+        print('ℹ️ Chạy test với API key thực tế: flutter test test/chat_flow_test.dart --dart-define=GEMINI_API_KEY=your_key');
+        expect(response, contains('API Key Gemini chưa được cấu hình'));
       } else {
-        expect(response, isNotEmpty, reason: 'Phản hồi từ Gemini AI không được để trống');
+        // Strict verification: MUST be a real AI response and NOT an error
+        expect(response.startsWith('❌'), isFalse, reason: 'Phản hồi từ Gemini API không được chứa lỗi');
+        expect(response.startsWith('⚠️'), isFalse, reason: 'Phản hồi từ Gemini API không được bị dính cảnh báo hạn ngạch');
+        expect(response.length, greaterThan(20), reason: 'Phản hồi từ AI phải chi tiết (>20 ký tự)');
         expect(geminiService.history.length, equals(2),
             reason: 'Lịch sử hội thoại phải lưu đủ 2 lượt tin nhắn (user & model)');
         expect(geminiService.history[0]['role'], equals('user'));

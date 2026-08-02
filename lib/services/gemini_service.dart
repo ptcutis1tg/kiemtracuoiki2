@@ -4,9 +4,10 @@ import 'package:http/http.dart' as http;
 class GeminiService {
   static const String _apiKey = String.fromEnvironment('GEMINI_API_KEY');
 
-  // Standard model list
+  // Priority list of Gemini models for maximum availability & performance
   static const List<String> _models = [
     'gemini-1.5-flash',
+    'gemini-1.5-flash-8b',
     'gemini-1.5-flash-latest',
     'gemini-2.0-flash',
   ];
@@ -56,42 +57,47 @@ class GeminiService {
       final url = Uri.parse(
           'https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent?key=$_apiKey');
 
-      try {
-        final response = await http.post(
-          url,
-          headers: {'Content-Type': 'application/json'},
-          body: jsonEncode(payload),
-        );
+      // Retry loop for rate limits (up to 3 retries with delay)
+      for (int attempt = 0; attempt < 3; attempt++) {
+        try {
+          final response = await http.post(
+            url,
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode(payload),
+          );
 
-        if (response.statusCode == 200) {
-          final data = jsonDecode(response.body);
-          final String botResponse =
-              data['candidates']?[0]?['content']?['parts']?[0]?['text'] ??
-                  'Không nhận được phản hồi từ AI.';
+          if (response.statusCode == 200) {
+            final data = jsonDecode(response.body);
+            final String botResponse =
+                data['candidates']?[0]?['content']?['parts']?[0]?['text'] ??
+                    'Không nhận được phản hồi từ AI.';
 
-          _history.add({
-            'role': 'model',
-            'parts': [
-              {'text': botResponse}
-            ]
-          });
+            _history.add({
+              'role': 'model',
+              'parts': [
+                {'text': botResponse}
+              ]
+            });
 
-          return botResponse;
-        } else if (response.statusCode == 404) {
-          // Model 404 Not Found -> try next model in candidate list
-          continue;
-        } else if (response.statusCode == 429) {
-          // Rate Limit / Quota Exceeded -> Stop immediately, DO NOT loop through other models to avoid spamming Google's rate limiter
-          lastErrorMessage = '429 Rate Limit Exceeded';
-          break;
-        } else {
-          final errorJson = jsonDecode(response.body);
-          lastErrorMessage = errorJson['error']?['message'] ?? 'Lỗi kết nối API (${response.statusCode})';
+            return botResponse;
+          } else if (response.statusCode == 404) {
+            // Model 404 Not Found -> try next model in candidate list
+            break;
+          } else if (response.statusCode == 429) {
+            // Rate Limit -> Wait 2.5 seconds and retry attempt
+            lastErrorMessage = '429 Rate Limit Exceeded';
+            await Future.delayed(const Duration(milliseconds: 2500));
+            continue;
+          } else {
+            final errorJson = jsonDecode(response.body);
+            lastErrorMessage =
+                errorJson['error']?['message'] ?? 'Lỗi kết nối API (${response.statusCode})';
+            break;
+          }
+        } catch (e) {
+          lastErrorMessage = 'Lỗi kết nối mạng: $e';
           break;
         }
-      } catch (e) {
-        lastErrorMessage = 'Lỗi kết nối mạng: $e';
-        break;
       }
     }
 
