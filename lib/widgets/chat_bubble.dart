@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import '../models/chat_message.dart';
 
 class ChatBubble extends StatelessWidget {
@@ -41,18 +42,37 @@ class ChatBubble extends StatelessWidget {
                   bottomRight: Radius.circular(isUser ? 4 : 16),
                 ),
               ),
-              child: Text(
-                message.text,
-                style: TextStyle(
-                  color: isUser
-                      ? theme.colorScheme.onPrimary
-                      : message.isError
-                          ? theme.colorScheme.onErrorContainer
-                          : theme.colorScheme.onSurfaceVariant,
-                  fontSize: 14,
-                  height: 1.4,
-                ),
-              ),
+              child: isUser 
+                  ? Text(
+                      message.text,
+                      style: TextStyle(
+                        color: theme.colorScheme.onPrimary,
+                        fontSize: 14,
+                        height: 1.4,
+                      ),
+                    )
+                  : MarkdownBody(
+                      data: message.text,
+                      styleSheet: MarkdownStyleSheet(
+                        p: TextStyle(
+                          color: message.isError
+                              ? theme.colorScheme.onErrorContainer
+                              : theme.colorScheme.onSurfaceVariant,
+                          fontSize: 14,
+                          height: 1.4,
+                        ),
+                        code: TextStyle(
+                          backgroundColor: theme.colorScheme.surfaceContainerHigh,
+                          fontFamily: 'monospace',
+                          fontSize: 13,
+                          color: theme.colorScheme.onSurface,
+                        ),
+                        codeblockDecoration: BoxDecoration(
+                          color: theme.colorScheme.surfaceContainerHigh,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                    ),
             ),
           ),
           if (isUser) const SizedBox(width: 8),
