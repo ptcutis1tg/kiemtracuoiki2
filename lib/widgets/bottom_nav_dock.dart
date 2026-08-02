@@ -33,10 +33,10 @@ class BottomNavDock extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
-          // Home Icon
+          // Home Icon (now Discovery)
           IconButton(
             icon: Icon(
-              Icons.home_rounded,
+              Icons.explore_rounded,
               color: activeIndex == 0 ? Colors.white : Colors.white38,
               size: 26,
             ),

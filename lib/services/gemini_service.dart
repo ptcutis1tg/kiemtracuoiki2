@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'session_service.dart';
 
 class GeminiService {
   static const String _apiKey = String.fromEnvironment('GEMINI_API_KEY');
@@ -15,11 +16,10 @@ class GeminiService {
 
   final List<Map<String, dynamic>> _history = [];
 
-  static const String _systemPrompt =
-      'Bạn là chuyên gia tư vấn hướng nghiệp tiếng Việt cho học sinh THPT chọn ngành đại học. '
-      'Hãy luôn đặt câu hỏi ngược lại về sở thích, môn học thế mạnh, và tính cách của học sinh trước khi đưa ra kết luận. '
-      'Khi tư vấn, hãy gợi ý 2-3 ngành học phù hợp nhất kèm lý do chi tiết và khối thi tương ứng (A00, A01, B00, D01, v.v.). '
-      'Nếu học sinh hỏi các chủ đề nằm ngoài hướng nghiệp và chọn trường/ngành đại học, hãy từ chối một cách lịch sự và hướng học sinh quay lại chủ đề tư vấn hướng nghiệp.';
+  String get _systemPrompt {
+    return SessionService().currentMentor?.systemPrompt ??
+        'Bạn là chuyên gia tư vấn hướng nghiệp tiếng Việt cho học sinh THPT chọn ngành đại học.';
+  }
 
   List<Map<String, dynamic>> get history => List.unmodifiable(_history);
 

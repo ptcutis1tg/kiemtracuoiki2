@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/chat_message.dart';
 import '../models/chat_session.dart';
+import '../models/mentor.dart';
 
 class SessionService {
   static final SessionService _instance = SessionService._internal();
@@ -12,10 +13,28 @@ class SessionService {
   final List<ChatSession> _sessions = [];
   SharedPreferences? _prefs;
   static const String _storageKey = 'career_chat_sessions_v1';
+  static const String _mentorKey = 'selected_mentor_id';
+
+  Mentor? currentMentor;
 
   Future<void> init() async {
     _prefs = await SharedPreferences.getInstance();
+    
+    // Load Mentor
+    final mentorId = _prefs!.getString(_mentorKey) ?? 'default';
+    currentMentor = Mentor.defaultMentors.firstWhere(
+      (m) => m.id == mentorId,
+      orElse: () => Mentor.defaultMentors.first,
+    );
+
     _loadSessions();
+  }
+
+  Future<void> setMentor(Mentor mentor) async {
+    currentMentor = mentor;
+    if (_prefs != null) {
+      await _prefs!.setString(_mentorKey, mentor.id);
+    }
   }
 
   void _loadSessions() {
