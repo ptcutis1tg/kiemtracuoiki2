@@ -1,19 +1,26 @@
 import 'package:flutter/material.dart';
 import '../models/chat_message.dart';
+import '../models/chat_session.dart';
 import '../services/gemini_service.dart';
 import '../widgets/chat_bubble.dart';
 import '../widgets/input_bar.dart';
 import '../widgets/quick_chips.dart';
 
 class ChatScreen extends StatefulWidget {
-  const ChatScreen({super.key});
+  final ChatSession session;
+  final String? initialMessage;
+
+  const ChatScreen({
+    super.key,
+    required this.session,
+    this.initialMessage,
+  });
 
   @override
   State<ChatScreen> createState() => _ChatScreenState();
 }
 
 class _ChatScreenState extends State<ChatScreen> {
-  final List<ChatMessage> _messages = [];
   final TextEditingController _controller = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   final GeminiService _geminiService = GeminiService();
@@ -29,15 +36,11 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   void initState() {
     super.initState();
-    _messages.add(
-      ChatMessage(
-        id: UniqueKey().toString(),
-        text: 'Chào bạn! Mình là AI Tư vấn Hướng nghiệp THPT 🤖.\n'
-            'Hãy chia sẻ cho mình biết bạn thích những môn học nào nhất, thế mạnh hoặc tính cách của bạn để mình hỗ trợ chọn ngành đại học phù hợp nhé!',
-        sender: MessageSender.bot,
-        timestamp: DateTime.now(),
-      ),
-    );
+    if (widget.initialMessage != null && widget.initialMessage!.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _handleSendMessage(widget.initialMessage);
+      });
+    }
   }
 
   @override
@@ -68,7 +71,7 @@ class _ChatScreenState extends State<ChatScreen> {
     }
 
     setState(() {
-      _messages.add(ChatMessage(
+      widget.session.messages.add(ChatMessage(
         id: UniqueKey().toString(),
         text: text,
         sender: MessageSender.user,
@@ -81,7 +84,7 @@ class _ChatScreenState extends State<ChatScreen> {
     final botResponse = await _geminiService.sendMessage(text);
 
     setState(() {
-      _messages.add(ChatMessage(
+      widget.session.messages.add(ChatMessage(
         id: UniqueKey().toString(),
         text: botResponse,
         sender: MessageSender.bot,
@@ -98,37 +101,43 @@ class _ChatScreenState extends State<ChatScreen> {
     final theme = Theme.of(context);
 
     return Scaffold(
+      backgroundColor: const Color(0xFF0D0C1D),
       appBar: AppBar(
-        title: const Row(
+        backgroundColor: const Color(0xFF161426),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: Row(
           children: [
-            Icon(Icons.smart_toy_rounded, color: Colors.blueAccent),
-            SizedBox(width: 8),
-            Text('Tư vấn Hướng nghiệp THPT', style: TextStyle(fontWeight: FontWeight.bold)),
+            const CircleAvatar(
+              radius: 14,
+              backgroundColor: Colors.blueAccent,
+              child: Icon(Icons.smart_toy, size: 16, color: Colors.white),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    widget.session.title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
+                  ),
+                  const Row(
+                    children: [
+                      Icon(Icons.circle, color: Colors.greenAccent, size: 8),
+                      SizedBox(width: 4),
+                      Text('Online', style: TextStyle(color: Colors.white54, fontSize: 11)),
+                    ],
+                  )
+                ],
+              ),
+            ),
           ],
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            tooltip: 'Làm mới cuộc trò chuyện',
-            onPressed: _isLoading
-                ? null
-                : () {
-                    setState(() {
-                      _messages.clear();
-                      _geminiService.clearHistory();
-                      _messages.add(
-                        ChatMessage(
-                          id: UniqueKey().toString(),
-                          text: 'Chào bạn! Mình là AI Tư vấn Hướng nghiệp THPT 🤖.\n'
-                              'Hãy chia sẻ cho mình biết bạn thích những môn học nào nhất để mình hỗ trợ nhé!',
-                          sender: MessageSender.bot,
-                          timestamp: DateTime.now(),
-                        ),
-                      );
-                    });
-                  },
-          )
-        ],
       ),
       body: Column(
         children: [
@@ -137,14 +146,14 @@ class _ChatScreenState extends State<ChatScreen> {
             isLoading: _isLoading,
             onChipSelected: _handleSendMessage,
           ),
-          const Divider(height: 1),
+          const Divider(height: 1, color: Colors.white10),
           Expanded(
             child: ListView.builder(
               controller: _scrollController,
               padding: const EdgeInsets.all(12),
-              itemCount: _messages.length,
+              itemCount: widget.session.messages.length,
               itemBuilder: (context, index) {
-                final msg = _messages[index];
+                final msg = widget.session.messages[index];
                 return ChatBubble(key: ValueKey(msg.id), message: msg);
               },
             ),
@@ -157,7 +166,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   const SizedBox(
                     width: 16,
                     height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2),
+                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.cyanAccent),
                   ),
                   const SizedBox(width: 12),
                   Text(

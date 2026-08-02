@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'screens/chat_screen.dart';
+import 'screens/welcome_screen.dart';
 
 void main() {
   runApp(const CareerChatbotApp());
@@ -13,22 +13,17 @@ class CareerChatbotApp extends StatelessWidget {
     return MaterialApp(
       title: 'Tư vấn Hướng nghiệp THPT',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.blue,
-          brightness: Brightness.light,
-        ),
-      ),
+      themeMode: ThemeMode.dark,
       darkTheme: ThemeData(
         useMaterial3: true,
+        brightness: Brightness.dark,
+        scaffoldBackgroundColor: const Color(0xFF0D0C1D),
         colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.blue,
+          seedColor: const Color(0xFF6C5CE7),
           brightness: Brightness.dark,
         ),
       ),
-      themeMode: ThemeMode.system,
-      home: const ChatScreen(),
+      home: const WelcomeScreen(),
     );
   }
 }
