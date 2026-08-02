@@ -4,12 +4,11 @@ import 'package:http/http.dart' as http;
 class GeminiService {
   static const String _apiKey = String.fromEnvironment('GEMINI_API_KEY');
 
-  // Candidate models to try in order of preference & compatibility
+  // Candidate models: put 1.5 Flash first as it has 15 RPM free tier for all keys
   static const List<String> _models = [
-    'gemini-2.0-flash',
-    'gemini-1.5-flash-latest',
-    'gemini-2.5-flash',
     'gemini-1.5-flash',
+    'gemini-1.5-flash-latest',
+    'gemini-2.0-flash',
   ];
 
   final List<Map<String, dynamic>> _history = [];
@@ -53,7 +52,6 @@ class GeminiService {
 
     String lastErrorMessage = 'Không thể gọi API';
 
-    // Try candidate models sequentially until one succeeds
     for (final model in _models) {
       final url = Uri.parse(
           'https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent?key=$_apiKey');
@@ -81,14 +79,13 @@ class GeminiService {
           return botResponse;
         } else {
           final errorJson = jsonDecode(response.body);
-          lastErrorMessage = errorJson['error']?['message'] ??
-              'Lỗi kết nối API (${response.statusCode})';
+          final String rawErr = errorJson['error']?['message'] ?? '';
+          lastErrorMessage = rawErr.isNotEmpty ? rawErr : 'Lỗi kết nối API (${response.statusCode})';
 
-          // If error is 404 (model not found), try next model in list
-          if (response.statusCode == 404) {
+          // If error is 404 (Model not found) or 429 (Quota limit: 0 on model), try next candidate model
+          if (response.statusCode == 404 || response.statusCode == 429 || rawErr.contains('limit: 0')) {
             continue;
           } else {
-            // Other error (e.g. 400 Bad Request or 403 Forbidden or 429 Quota), break
             break;
           }
         }
@@ -97,9 +94,13 @@ class GeminiService {
       }
     }
 
-    // Rollback last user message if all attempts failed
+    // Rollback last user message if all models failed
     if (_history.isNotEmpty && _history.last['role'] == 'user') {
       _history.removeLast();
+    }
+
+    if (lastErrorMessage.contains('Quota exceeded') || lastErrorMessage.contains('429')) {
+      return '⚠️ Bạn đã đạt giới hạn gọi AI miễn phí trong phút này (15 lượt/phút). Vui lòng đợi khoảng 30-60 giây rồi nhấn gửi lại nhé!';
     }
 
     return '❌ Lỗi Gemini API: $lastErrorMessage';
