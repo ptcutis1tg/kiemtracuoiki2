@@ -1,13 +1,19 @@
+enum MessageSender { user, bot }
+
 class ChatMessage {
+  final String id;
   final String text;
-  final bool isUser;
+  final MessageSender sender;
   final DateTime timestamp;
   final bool isError;
 
-  ChatMessage({
+  const ChatMessage({
+    required this.id,
     required this.text,
-    required this.isUser,
-    DateTime? timestamp,
+    required this.sender,
+    required this.timestamp,
     this.isError = false,
-  }) : timestamp = timestamp ?? DateTime.now();
+  });
+
+  bool get isUser => sender == MessageSender.user;
 }

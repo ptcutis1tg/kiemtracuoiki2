@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import '../models/chat_message.dart';
 import '../services/gemini_service.dart';
+import '../widgets/chat_bubble.dart';
+import '../widgets/input_bar.dart';
+import '../widgets/quick_chips.dart';
 
 class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key});
@@ -16,7 +19,7 @@ class _ChatScreenState extends State<ChatScreen> {
   final GeminiService _geminiService = GeminiService();
   bool _isLoading = false;
 
-  final List<String> _quickChips = [
+  final List<String> _quickChips = const [
     'Mình thích Toán & Tin học 💻',
     'Mình giỏi Ngoại ngữ & Văn học 📚',
     'Mình thích Vẽ & Thiết kế 🎨',
@@ -28,9 +31,11 @@ class _ChatScreenState extends State<ChatScreen> {
     super.initState();
     _messages.add(
       ChatMessage(
+        id: UniqueKey().toString(),
         text: 'Chào bạn! Mình là AI Tư vấn Hướng nghiệp THPT 🤖.\n'
             'Hãy chia sẻ cho mình biết bạn thích những môn học nào nhất, thế mạnh hoặc tính cách của bạn để mình hỗ trợ chọn ngành đại học phù hợp nhé!',
-        isUser: false,
+        sender: MessageSender.bot,
+        timestamp: DateTime.now(),
       ),
     );
   }
@@ -48,7 +53,7 @@ class _ChatScreenState extends State<ChatScreen> {
         _scrollController.animateTo(
           _scrollController.position.maxScrollExtent,
           duration: const Duration(milliseconds: 300),
-          curve: Curves.easeOut,
+          curve: Curves.easeOutCubic,
         );
       }
     });
@@ -63,7 +68,12 @@ class _ChatScreenState extends State<ChatScreen> {
     }
 
     setState(() {
-      _messages.add(ChatMessage(text: text, isUser: true));
+      _messages.add(ChatMessage(
+        id: UniqueKey().toString(),
+        text: text,
+        sender: MessageSender.user,
+        timestamp: DateTime.now(),
+      ));
       _isLoading = true;
     });
     _scrollToBottom();
@@ -72,8 +82,10 @@ class _ChatScreenState extends State<ChatScreen> {
 
     setState(() {
       _messages.add(ChatMessage(
+        id: UniqueKey().toString(),
         text: botResponse,
-        isUser: false,
+        sender: MessageSender.bot,
+        timestamp: DateTime.now(),
         isError: botResponse.startsWith('❌') || botResponse.startsWith('⚠️'),
       ));
       _isLoading = false;
@@ -106,9 +118,11 @@ class _ChatScreenState extends State<ChatScreen> {
                       _geminiService.clearHistory();
                       _messages.add(
                         ChatMessage(
+                          id: UniqueKey().toString(),
                           text: 'Chào bạn! Mình là AI Tư vấn Hướng nghiệp THPT 🤖.\n'
                               'Hãy chia sẻ cho mình biết bạn thích những môn học nào nhất để mình hỗ trợ nhé!',
-                          isUser: false,
+                          sender: MessageSender.bot,
+                          timestamp: DateTime.now(),
                         ),
                       );
                     });
@@ -118,28 +132,12 @@ class _ChatScreenState extends State<ChatScreen> {
       ),
       body: Column(
         children: [
-          // Quick suggestion chips
-          Container(
-            height: 50,
-            padding: const EdgeInsets.symmetric(vertical: 6),
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              itemCount: _quickChips.length,
-              separatorBuilder: (context, index) => const SizedBox(width: 8),
-              itemBuilder: (context, index) {
-                final chipText = _quickChips[index];
-                return ActionChip(
-                  label: Text(chipText, style: const TextStyle(fontSize: 13)),
-                  backgroundColor: theme.colorScheme.surfaceContainerHighest,
-                  onPressed: _isLoading ? null : () => _handleSendMessage(chipText),
-                );
-              },
-            ),
+          QuickChips(
+            chips: _quickChips,
+            isLoading: _isLoading,
+            onChipSelected: _handleSendMessage,
           ),
           const Divider(height: 1),
-
-          // Message list
           Expanded(
             child: ListView.builder(
               controller: _scrollController,
@@ -147,12 +145,10 @@ class _ChatScreenState extends State<ChatScreen> {
               itemCount: _messages.length,
               itemBuilder: (context, index) {
                 final msg = _messages[index];
-                return _buildMessageBubble(msg, theme);
+                return ChatBubble(key: ValueKey(msg.id), message: msg);
               },
             ),
           ),
-
-          // Loading indicator
           if (_isLoading)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -175,100 +171,11 @@ class _ChatScreenState extends State<ChatScreen> {
                 ],
               ),
             ),
-
-          // Input area
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.surface,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.05),
-                  blurRadius: 4,
-                  offset: const Offset(0, -2),
-                )
-              ],
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _controller,
-                    enabled: !_isLoading,
-                    decoration: InputDecoration(
-                      hintText: 'Nhập tin nhắn tư vấn...',
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(24),
-                        borderSide: BorderSide.none,
-                      ),
-                      filled: true,
-                      fillColor: theme.colorScheme.surfaceContainerHighest,
-                    ),
-                    onSubmitted: (_) => _handleSendMessage(),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                IconButton.filled(
-                  icon: const Icon(Icons.send_rounded),
-                  onPressed: _isLoading ? null : () => _handleSendMessage(),
-                ),
-              ],
-            ),
+          InputBar(
+            controller: _controller,
+            isLoading: _isLoading,
+            onSend: () => _handleSendMessage(),
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMessageBubble(ChatMessage msg, ThemeData theme) {
-    final isUser = msg.isUser;
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(
-        mainAxisAlignment: isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (!isUser) ...[
-            CircleAvatar(
-              radius: 16,
-              backgroundColor: theme.colorScheme.primaryContainer,
-              child: const Icon(Icons.smart_toy, size: 18, color: Colors.blue),
-            ),
-            const SizedBox(width: 8),
-          ],
-          Flexible(
-            child: Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: isUser
-                    ? theme.colorScheme.primary
-                    : msg.isError
-                        ? theme.colorScheme.errorContainer
-                        : theme.colorScheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.only(
-                  topLeft: const Radius.circular(16),
-                  topRight: const Radius.circular(16),
-                  bottomLeft: Radius.circular(isUser ? 16 : 4),
-                  bottomRight: Radius.circular(isUser ? 4 : 16),
-                ),
-              ),
-              child: Text(
-                msg.text,
-                style: TextStyle(
-                  color: isUser
-                      ? theme.colorScheme.onPrimary
-                      : msg.isError
-                          ? theme.colorScheme.onErrorContainer
-                          : theme.colorScheme.onSurfaceVariant,
-                  fontSize: 14,
-                  height: 1.4,
-                ),
-              ),
-            ),
-          ),
-          if (isUser) const SizedBox(width: 8),
         ],
       ),
     );
