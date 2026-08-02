@@ -3,8 +3,14 @@ import 'package:http/http.dart' as http;
 
 class GeminiService {
   static const String _apiKey = String.fromEnvironment('GEMINI_API_KEY');
-  static const String _baseUrl =
-      'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
+
+  // Candidate models to try in order of preference & compatibility
+  static const List<String> _models = [
+    'gemini-2.0-flash',
+    'gemini-1.5-flash-latest',
+    'gemini-2.5-flash',
+    'gemini-1.5-flash',
+  ];
 
   final List<Map<String, dynamic>> _history = [];
 
@@ -32,7 +38,6 @@ class GeminiService {
       ]
     });
 
-    final url = Uri.parse('$_baseUrl?key=$_apiKey');
     final payload = {
       'system_instruction': {
         'parts': [
@@ -46,41 +51,57 @@ class GeminiService {
       }
     };
 
-    try {
-      final response = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(payload),
-      );
+    String lastErrorMessage = 'Không thể gọi API';
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final String botResponse =
-            data['candidates']?[0]?['content']?['parts']?[0]?['text'] ??
-                'Không nhận được phản hồi từ AI.';
+    // Try candidate models sequentially until one succeeds
+    for (final model in _models) {
+      final url = Uri.parse(
+          'https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent?key=$_apiKey');
 
-        _history.add({
-          'role': 'model',
-          'parts': [
-            {'text': botResponse}
-          ]
-        });
+      try {
+        final response = await http.post(
+          url,
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode(payload),
+        );
 
-        return botResponse;
-      } else {
-        if (_history.isNotEmpty && _history.last['role'] == 'user') {
-          _history.removeLast();
+        if (response.statusCode == 200) {
+          final data = jsonDecode(response.body);
+          final String botResponse =
+              data['candidates']?[0]?['content']?['parts']?[0]?['text'] ??
+                  'Không nhận được phản hồi từ AI.';
+
+          _history.add({
+            'role': 'model',
+            'parts': [
+              {'text': botResponse}
+            ]
+          });
+
+          return botResponse;
+        } else {
+          final errorJson = jsonDecode(response.body);
+          lastErrorMessage = errorJson['error']?['message'] ??
+              'Lỗi kết nối API (${response.statusCode})';
+
+          // If error is 404 (model not found), try next model in list
+          if (response.statusCode == 404) {
+            continue;
+          } else {
+            // Other error (e.g. 400 Bad Request or 403 Forbidden or 429 Quota), break
+            break;
+          }
         }
-        final errorJson = jsonDecode(response.body);
-        final errorMessage =
-            errorJson['error']?['message'] ?? 'Lỗi kết nối API (${response.statusCode})';
-        return '❌ Lỗi Gemini API: $errorMessage';
+      } catch (e) {
+        lastErrorMessage = 'Lỗi kết nối mạng: $e';
       }
-    } catch (e) {
-      if (_history.isNotEmpty && _history.last['role'] == 'user') {
-        _history.removeLast();
-      }
-      return '❌ Không thể kết nối tới Gemini API. Vui lòng kiểm tra lại mạng. Lỗi: $e';
     }
+
+    // Rollback last user message if all attempts failed
+    if (_history.isNotEmpty && _history.last['role'] == 'user') {
+      _history.removeLast();
+    }
+
+    return '❌ Lỗi Gemini API: $lastErrorMessage';
   }
 }
