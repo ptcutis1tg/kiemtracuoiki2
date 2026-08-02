@@ -23,7 +23,7 @@ class _HomeScreenState extends State<HomeScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => ChatScreen(session: session, initialMessage: customPrompt),
+        builder: (_) => ChatScreen(session: session),
       ),
     ).then((_) => setState(() {}));
   }

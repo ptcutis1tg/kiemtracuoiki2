@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 class GeminiService {
   static const String _apiKey = String.fromEnvironment('GEMINI_API_KEY');
 
-  // Candidate models: put 1.5 Flash first as it has 15 RPM free tier for all keys
+  // Standard model list
   static const List<String> _models = [
     'gemini-1.5-flash',
     'gemini-1.5-flash-latest',
@@ -77,30 +77,31 @@ class GeminiService {
           });
 
           return botResponse;
+        } else if (response.statusCode == 404) {
+          // Model 404 Not Found -> try next model in candidate list
+          continue;
+        } else if (response.statusCode == 429) {
+          // Rate Limit / Quota Exceeded -> Stop immediately, DO NOT loop through other models to avoid spamming Google's rate limiter
+          lastErrorMessage = '429 Rate Limit Exceeded';
+          break;
         } else {
           final errorJson = jsonDecode(response.body);
-          final String rawErr = errorJson['error']?['message'] ?? '';
-          lastErrorMessage = rawErr.isNotEmpty ? rawErr : 'Lỗi kết nối API (${response.statusCode})';
-
-          // If error is 404 (Model not found) or 429 (Quota limit: 0 on model), try next candidate model
-          if (response.statusCode == 404 || response.statusCode == 429 || rawErr.contains('limit: 0')) {
-            continue;
-          } else {
-            break;
-          }
+          lastErrorMessage = errorJson['error']?['message'] ?? 'Lỗi kết nối API (${response.statusCode})';
+          break;
         }
       } catch (e) {
         lastErrorMessage = 'Lỗi kết nối mạng: $e';
+        break;
       }
     }
 
-    // Rollback last user message if all models failed
+    // Rollback last user message if request failed
     if (_history.isNotEmpty && _history.last['role'] == 'user') {
       _history.removeLast();
     }
 
-    if (lastErrorMessage.contains('Quota exceeded') || lastErrorMessage.contains('429')) {
-      return '⚠️ Bạn đã đạt giới hạn gọi AI miễn phí trong phút này (15 lượt/phút). Vui lòng đợi khoảng 30-60 giây rồi nhấn gửi lại nhé!';
+    if (lastErrorMessage.contains('429') || lastErrorMessage.contains('Quota')) {
+      return '⚠️ Bạn đã đạt giới hạn gọi AI miễn phí trong phút này (15 lượt/phút). Vui lòng chờ khoảng 30-60 giây rồi nhấn Gửi lại nhé!';
     }
 
     return '❌ Lỗi Gemini API: $lastErrorMessage';
