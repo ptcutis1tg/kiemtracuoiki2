@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../services/session_service.dart';
@@ -30,6 +31,14 @@ class CareerChatbotApp extends StatelessWidget {
       themeMode: ThemeMode.dark,
       darkTheme: baseDarkTheme.copyWith(
         textTheme: GoogleFonts.plusJakartaSansTextTheme(baseDarkTheme.textTheme),
+      ),
+      scrollBehavior: const MaterialScrollBehavior().copyWith(
+        dragDevices: {
+          PointerDeviceKind.mouse,
+          PointerDeviceKind.touch,
+          PointerDeviceKind.stylus,
+          PointerDeviceKind.unknown,
+        },
       ),
       home: const WelcomeScreen(),
     );
