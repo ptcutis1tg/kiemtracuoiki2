@@ -4,13 +4,13 @@ import 'package:http/http.dart' as http;
 class GeminiService {
   static const String _apiKey = String.fromEnvironment('GEMINI_API_KEY');
 
-  // Priority list of Gemini models for maximum quota availability
+  // Official alias models supported by Google AI Studio for this key
   static const List<String> _models = [
-    'gemini-1.5-flash',
-    'gemini-1.5-flash-8b',
-    'gemini-2.0-flash-lite',
-    'gemini-1.5-pro',
+    'gemini-flash-latest',
+    'gemini-2.5-flash',
     'gemini-2.0-flash',
+    'gemini-flash-lite-latest',
+    'gemini-pro-latest',
   ];
 
   final List<Map<String, dynamic>> _history = [];
@@ -54,7 +54,6 @@ class GeminiService {
 
     String lastErrorMessage = 'Không thể gọi API';
 
-    // Try candidate models sequentially. If one model returns 404 or 429 (Quota limit: 0), try next model immediately.
     for (final model in _models) {
       final url = Uri.parse(
           'https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent?key=$_apiKey');
@@ -85,7 +84,6 @@ class GeminiService {
           final String rawErr = errorJson['error']?['message'] ?? '';
           lastErrorMessage = rawErr.isNotEmpty ? rawErr : 'Lỗi kết nối API (${response.statusCode})';
 
-          // If error is 404 (Model not found) or 429 (Quota exceeded/limit: 0 on this model), try next candidate model in list
           if (response.statusCode == 404 || response.statusCode == 429 || rawErr.contains('limit: 0')) {
             continue;
           } else {
