@@ -5,6 +5,7 @@ class BottomNavDock extends StatelessWidget {
   final VoidCallback onHomeTap;
   final VoidCallback onNewChatTap;
   final VoidCallback onRecentChatTap;
+  final VoidCallback onExitTap;
 
   const BottomNavDock({
     super.key,
@@ -12,6 +13,7 @@ class BottomNavDock extends StatelessWidget {
     required this.onHomeTap,
     required this.onNewChatTap,
     required this.onRecentChatTap,
+    required this.onExitTap,
   });
 
   @override
@@ -41,6 +43,16 @@ class BottomNavDock extends StatelessWidget {
               size: 26,
             ),
             onPressed: onHomeTap,
+          ),
+
+          // Exit / Power Button
+          IconButton(
+            icon: const Icon(
+              Icons.power_settings_new_rounded,
+              color: Colors.redAccent,
+              size: 24,
+            ),
+            onPressed: onExitTap,
           ),
 
           // Glowing Neon Center '+' Button

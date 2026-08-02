@@ -3,6 +3,7 @@ import '../models/mentor.dart';
 import '../services/session_service.dart';
 import '../widgets/bottom_nav_dock.dart';
 import 'chat_screen.dart';
+import 'welcome_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -177,6 +178,13 @@ class _HomeScreenState extends State<HomeScreen> {
                 onHomeTap: () {},
                 onNewChatTap: () => _navigateToChat(),
                 onRecentChatTap: () => _navigateToRecentChat(),
+                onExitTap: () {
+                  Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(builder: (_) => const WelcomeScreen()),
+                    (route) => false,
+                  );
+                },
               ),
             ),
           ],

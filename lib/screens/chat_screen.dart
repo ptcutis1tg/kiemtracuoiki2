@@ -113,10 +113,10 @@ class _ChatScreenState extends State<ChatScreen> {
         ),
         title: Row(
           children: [
-            const CircleAvatar(
-              radius: 14,
-              backgroundColor: Colors.blueAccent,
-              child: Icon(Icons.smart_toy, size: 16, color: Colors.white),
+            CircleAvatar(
+              radius: 16,
+              backgroundImage: AssetImage(SessionService().currentMentor?.imageAsset ?? 'assets/images/mentors/default.png'),
+              backgroundColor: Colors.transparent,
             ),
             const SizedBox(width: 10),
             Expanded(
@@ -124,7 +124,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    widget.session.title,
+                    SessionService().currentMentor?.name ?? 'Trợ lý ảo',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
