@@ -34,6 +34,9 @@ class InputBar extends StatelessWidget {
             child: TextField(
               controller: controller,
               enabled: !isLoading,
+              minLines: 1,
+              maxLines: 5,
+              textInputAction: TextInputAction.newline,
               decoration: InputDecoration(
                 hintText: 'Nhập tin nhắn tư vấn...',
                 contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
